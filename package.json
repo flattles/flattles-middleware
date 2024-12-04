@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "express": "^4.21.1",
+    "pg": "^8.13.0"
+  },
+  "scripts": {
+    "start": "cd src && node server.js",
+    "setup": "psql -U postgres -f setup.sql",
+    "dev": "psql -U postgres -f setup.sql && cd src && node --watch server.js"
+  }
+}
