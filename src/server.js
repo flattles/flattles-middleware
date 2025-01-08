@@ -1,6 +1,7 @@
 let express = require('express');
 let { Pool } = require('pg');
 let env = require('../env.json');
+let WebSocket = require('ws');
 
 // let hostname = 'localhost';
 let hostname = '0.0.0.0';
@@ -13,6 +14,29 @@ app.use(express.static('public'));
 let pool = new Pool(env);
 pool.connect().then(() => {
   console.log('Connected to database');
+});
+
+const wss = new WebSocket.Server({ port: 8080 });
+wss.on('connection', ws => {
+    console.log('Client connected');
+
+    ws.on('message', message => {
+        const data = JSON.parse(message);
+        console.log(data)
+        console.log(`Received: ${data.payload} 
+    from client ${data.clientId}`);
+        // Broadcast the message to all connected clients
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(`Client ${data.clientId} 
+        sent -> ${data.payload}`);
+            }
+        });
+    });
+
+    ws.on('close', () => {
+        console.log('Client disconnected');
+    });
 });
 
 app.get('/', async (_req, res) => {
@@ -28,8 +52,21 @@ app.get('/', async (_req, res) => {
 app.get('/board', (_req, res) => {
   pool.query('SELECT * FROM board ORDER BY position_id ASC;').then((result) => {
     res.json(result.rows);
+  }).catch((error) => {
+    console.log(error);
+    res.sendStatus(500);
   });
 });
+
+function broadcastBoardState(updatedBoardState) {
+  const data = JSON.stringify({ type: 'UPDATE_BOARD', boardState: updatedBoardState });
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(data);
+    }
+  });
+}
+
 
 app.post('/move', (req, res) => {
   let body = req.body;
@@ -89,6 +126,10 @@ app.post('/move', (req, res) => {
     })
     .then(() => {
       console.log('Updated:', body);
+      return pool.query('SELECT * FROM board ORDER BY position_id ASC;');
+    }).then((result) => {
+      const updatedBoardState = result.rows;
+      broadcastBoardState(updatedBoardState);
       res.send();
     })
     .catch((error) => {
