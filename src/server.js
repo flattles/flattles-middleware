@@ -177,6 +177,10 @@ app.post('/attack', (req, res) => {
     })
     .then(() => {
       console.log(`Attacked ship ${targetShipID}: health and ${randomAttribute} decreased`);
+      return pool.query('SELECT * FROM board ORDER BY position_id ASC;');
+    }).then((result) => {
+      const updatedBoardState = result.rows;
+      broadcastBoardState(updatedBoardState);
       res.send();
     })
     .catch((error) => {

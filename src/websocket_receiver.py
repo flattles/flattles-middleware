@@ -1,11 +1,20 @@
-import asyncio
-import websockets
+import requests
 
-async def receive_message():
-    uri = "ws://localhost:8765"
-    async with websockets.connect(uri) as websocket:
-        message = await websocket.recv()
-        print(message)
+# Replace with laptop's IP and the server port
+url = "http://192.168.1.100:3000/move"  
 
-if __name__ == "__main__":
-    asyncio.run(receive_message())
+# Define the payload
+data = {
+    "shipID": 2,
+    "x": "B",
+    "y": 3
+}
+
+# Send the POST request
+response = requests.post(url, json=data)
+
+# Check the response
+if response.status_code == 200:
+    print("Success:", response.json())
+else:
+    print(f"Error {response.status_code}: {response.text}")
