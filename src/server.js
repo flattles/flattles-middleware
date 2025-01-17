@@ -1,15 +1,22 @@
 let express = require('express');
 let { Pool } = require('pg');
-let env = require('../env.json');
 let WebSocket = require('ws');
+const cors = require('cors');
+let env = require('../env.json');
 
-// let hostname = 'localhost';
 let hostname = '0.0.0.0';
 let port = 3000;
 let app = express();
 
 app.use(express.json());
 app.use(express.static('public'));
+app.use(
+  cors({
+    origin: 'http://localhost:5173', // Allow only this origin
+  })
+);
+// or, to allow all origins (less secure, use with caution):
+// app.use(cors());
 
 let pool = new Pool(env);
 pool.connect().then(() => {
@@ -17,26 +24,26 @@ pool.connect().then(() => {
 });
 
 const wss = new WebSocket.Server({ port: 8080 });
-wss.on('connection', ws => {
-    console.log('Client connected');
+wss.on('connection', (ws) => {
+  console.log('Client connected');
 
-    ws.on('message', message => {
-        const data = JSON.parse(message);
-        console.log(data)
-        console.log(`Received: ${data.payload} 
+  ws.on('message', (message) => {
+    const data = JSON.parse(message);
+    console.log(data);
+    console.log(`Received: ${data.payload} 
     from client ${data.clientId}`);
-        // Broadcast the message to all connected clients
-        wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(`Client ${data.clientId} 
+    // Broadcast the message to all connected clients
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(`Client ${data.clientId} 
         sent -> ${data.payload}`);
-            }
-        });
+      }
     });
+  });
 
-    ws.on('close', () => {
-        console.log('Client disconnected');
-    });
+  ws.on('close', () => {
+    console.log('Client disconnected');
+  });
 });
 
 app.get('/', async (_req, res) => {
@@ -44,29 +51,36 @@ app.get('/', async (_req, res) => {
   database['bases'] = (await pool.query('SELECT * FROM bases;')).rows;
   database['mines'] = (await pool.query('SELECT * FROM mines;')).rows;
   database['ships'] = (await pool.query('SELECT * FROM ships;')).rows;
-  database['board'] = (await pool.query('SELECT * FROM board ORDER BY position_id ASC;')).rows;
+  database['board'] = (
+    await pool.query('SELECT * FROM board ORDER BY position_id ASC;')
+  ).rows;
 
   res.json(database);
 });
 
 app.get('/board', (_req, res) => {
-  pool.query('SELECT * FROM board ORDER BY position_id ASC;').then((result) => {
-    res.json(result.rows);
-  }).catch((error) => {
-    console.log(error);
-    res.sendStatus(500);
-  });
+  pool
+    .query('SELECT * FROM board ORDER BY position_id ASC;')
+    .then((result) => {
+      res.json(result.rows);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.sendStatus(500);
+    });
 });
 
 function broadcastBoardState(updatedBoardState) {
-  const data = JSON.stringify({ type: 'UPDATE_BOARD', boardState: updatedBoardState });
+  const data = JSON.stringify({
+    type: 'UPDATE_BOARD',
+    boardState: updatedBoardState,
+  });
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(data);
     }
   });
 }
-
 
 app.post('/move', (req, res) => {
   let body = req.body;
@@ -90,7 +104,12 @@ app.post('/move', (req, res) => {
   }
 
   // Check if the required x and y properties are within the board's parameters
-  if (body.x < "A" || body.x > "E" || parseInt(body.y) < 0 || parseInt(body.y) > 5) {
+  if (
+    body.x < 'A' ||
+    body.x > 'E' ||
+    parseInt(body.y) < 0 ||
+    parseInt(body.y) > 5
+  ) {
     return res.sendStatus(400);
   }
 
@@ -127,7 +146,8 @@ app.post('/move', (req, res) => {
     .then(() => {
       console.log('Updated:', body);
       return pool.query('SELECT * FROM board ORDER BY position_id ASC;');
-    }).then((result) => {
+    })
+    .then((result) => {
       const updatedBoardState = result.rows;
       broadcastBoardState(updatedBoardState);
       res.send();
@@ -155,7 +175,7 @@ app.post('/attack', (req, res) => {
 
   pool
     .query(
-      "SELECT health, damage, speed, range FROM ships WHERE ship_id = $1",
+      'SELECT health, damage, speed, range FROM ships WHERE ship_id = $1',
       [targetShipID]
     )
     .then((result) => {
@@ -164,7 +184,8 @@ app.post('/attack', (req, res) => {
       }
 
       const newHealth = result.rows[0].health - result.rows[0].damage;
-      const newAttributeValue = result.rows[0][randomAttribute] - result.rows[0].damage;
+      const newAttributeValue =
+        result.rows[0][randomAttribute] - result.rows[0].damage;
 
       if (newHealth <= 0) {
         return res.sendStatus(400);
@@ -176,9 +197,12 @@ app.post('/attack', (req, res) => {
       );
     })
     .then(() => {
-      console.log(`Attacked ship ${targetShipID}: health and ${randomAttribute} decreased`);
+      console.log(
+        `Attacked ship ${targetShipID}: health and ${randomAttribute} decreased`
+      );
       return pool.query('SELECT * FROM board ORDER BY position_id ASC;');
-    }).then((result) => {
+    })
+    .then((result) => {
       const updatedBoardState = result.rows;
       broadcastBoardState(updatedBoardState);
       res.send();
