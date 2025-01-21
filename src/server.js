@@ -49,7 +49,7 @@ wss.on('connection', (ws) => {
 app.get('/', async (_req, res) => {
   let database = {};
   database['bases'] = (await pool.query('SELECT * FROM bases;')).rows;
-  database['mines'] = (await pool.query('SELECT * FROM mines;')).rows;
+  // database['mines'] = (await pool.query('SELECT * FROM mines;')).rows;
   database['ships'] = (await pool.query('SELECT * FROM ships;')).rows;
   database['board'] = (
     await pool.query('SELECT * FROM board ORDER BY position_id ASC;')
@@ -61,6 +61,24 @@ app.get('/', async (_req, res) => {
 app.get('/board', (_req, res) => {
   pool
     .query('SELECT * FROM board ORDER BY position_id ASC;')
+    .then((result) => {
+      res.json(result.rows);
+    })
+    .catch((error) => {
+      console.log(error);
+      res.sendStatus(500);
+    });
+});
+
+app.get('/ship', (req, res) => {
+  const player = req.query.player;
+
+  if (!player) {
+    return res.sendStatus(400);
+  }
+
+  pool
+    .query('SELECT * FROM ships WHERE ship_id = $1;', [player])
     .then((result) => {
       res.json(result.rows);
     })
