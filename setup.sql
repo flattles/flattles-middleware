@@ -69,8 +69,8 @@ DECLARE
   x INT;
   y INT;
 BEGIN
-  FOR x IN ASCII('A')..ASCII('E') LOOP
-    FOR y IN 1..5 LOOP
+  FOR x IN ASCII('A')..ASCII('J') LOOP
+    FOR y IN 1..10 LOOP
       INSERT INTO board (x_coord, y_coord, entity_type, entity_id)
       VALUES (CHR(x), y, 'none', NULL);
     END LOOP;
@@ -78,10 +78,10 @@ BEGIN
 END $$;
 
 -- Update the board table to reflect the initial positions of the players
-UPDATE board SET entity_type = 'ship', entity_id = 1 WHERE x_coord = 'A' AND y_coord = 1;
-UPDATE board SET entity_type = 'ship', entity_id = 2 WHERE x_coord = 'A' AND y_coord = 5;
-UPDATE board SET entity_type = 'ship', entity_id = 3 WHERE x_coord = 'E' AND y_coord = 1;
-UPDATE board SET entity_type = 'ship', entity_id = 4 WHERE x_coord = 'E' AND y_coord = 5;
+UPDATE board SET entity_type = 'ship', entity_id = 1 WHERE x_coord = 'F' AND y_coord = 1;
+UPDATE board SET entity_type = 'ship', entity_id = 2 WHERE x_coord = 'E' AND y_coord = 10;
+UPDATE board SET entity_type = 'ship', entity_id = 3 WHERE x_coord = 'A' AND y_coord = 6;
+UPDATE board SET entity_type = 'ship', entity_id = 4 WHERE x_coord = 'J' AND y_coord = 5;
 
 -- UPDATE board SET entity_type = 'mine', entity_id = 1 WHERE x_coord = 'B' AND y_coord = 2;
 -- UPDATE board SET entity_type = 'mine', entity_id = 2 WHERE x_coord = 'B' AND y_coord = 4;

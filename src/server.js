@@ -10,13 +10,13 @@ let app = express();
 
 app.use(express.json());
 app.use(express.static('public'));
-app.use(
-  cors({
-    origin: 'http://localhost:5173', // Allow only this origin
-  })
-);
+// app.use(
+//   cors({
+//     origin: 'http://localhost:5173', // Allow only this origin
+//   })
+// );
 // or, to allow all origins (less secure, use with caution):
-// app.use(cors());
+app.use(cors());
 
 let pool = new Pool(env);
 pool.connect().then(() => {
@@ -109,26 +109,26 @@ app.post('/move', (req, res) => {
     !body.hasOwnProperty('x') ||
     !body.hasOwnProperty('y')
   ) {
-    return res.sendStatus(400);
+    return res.status(400).send('Invalid request body');
   }
 
   // Check if the required properties have values contigent to their type
   if (
     body.shipID == '' ||
-    body.x == '' ||
+    typeof body.x !== 'string' ||
     !Number.isInteger(parseInt(body.y))
   ) {
-    return res.sendStatus(400);
+    return res.status(400).send('Invalid coordinate types');
   }
 
   // Check if the required x and y properties are within the board's parameters
   if (
     body.x < 'A' ||
-    body.x > 'E' ||
-    parseInt(body.y) < 0 ||
-    parseInt(body.y) > 5
+    body.x > 'J' ||
+    parseInt(body.y) < 1 ||
+    parseInt(body.y) > 10
   ) {
-    return res.sendStatus(400);
+    return res.status(400).send('Invalid coordinate values');
   }
 
   const shipID = body.shipID;
@@ -140,12 +140,25 @@ app.post('/move', (req, res) => {
   // Finally set the new position at the new coordinates to contain the ship
   pool
     .query(
-      "SELECT x_coord, y_coord FROM board WHERE entity_type = 'ship' AND entity_id = $1",
-      [shipID]
+      `SELECT entity_type, entity_id FROM board WHERE x_coord = $1 AND y_coord = $2`,
+      [newX, newY]
     )
     .then((result) => {
+      if (
+        result.rows[0].entity_type !== 'none' &&
+        result.rows[0].entity_id !== null
+      ) {
+        throw new Error('Target position is occupied');
+      }
+
+      return pool.query(
+        `SELECT x_coord, y_coord FROM board WHERE entity_type = 'ship' AND entity_id = $1`,
+        [shipID]
+      );
+    })
+    .then((result) => {
       if (result.rows.length === 0) {
-        return res.sendStatus(404);
+        throw new Error('Ship not found');
       }
 
       const currentX = result.rows[0].x_coord;
@@ -171,10 +184,8 @@ app.post('/move', (req, res) => {
       res.send();
     })
     .catch((error) => {
-      console.log(error);
-      return res.sendStatus(500);
+      return res.status(400).send(error.message);
     });
-  res.send();
 });
 
 const getRandomAttribute = () => {
@@ -186,7 +197,7 @@ app.post('/attack', (req, res) => {
   const { attackerShipID, targetShipID } = req.body;
 
   if (!attackerShipID || !targetShipID) {
-    return res.sendStatus(400);
+    return res.send(400).status('Invalid request body');
   }
 
   const randomAttribute = getRandomAttribute();
@@ -198,7 +209,7 @@ app.post('/attack', (req, res) => {
     )
     .then((result) => {
       if (result.rows.length === 0) {
-        return res.sendStatus(404);
+        throw new Error('Target ship not found');
       }
 
       const newHealth = result.rows[0].health - result.rows[0].damage;
@@ -206,7 +217,7 @@ app.post('/attack', (req, res) => {
         result.rows[0][randomAttribute] - result.rows[0].damage;
 
       if (newHealth <= 0) {
-        return res.sendStatus(400);
+        throw new Error('Target ship is already destroyed');
       }
 
       return pool.query(
@@ -227,7 +238,7 @@ app.post('/attack', (req, res) => {
     })
     .catch((error) => {
       console.log(error);
-      return res.sendStatus(500);
+      return res.status(400).send(error.message);
     });
 });
 
