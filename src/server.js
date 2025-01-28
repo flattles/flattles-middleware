@@ -15,7 +15,6 @@ app.use(express.static('public'));
 //     origin: 'http://localhost:5173', // Allow only this origin
 //   })
 // );
-// or, to allow all origins (less secure, use with caution):
 app.use(cors());
 
 let pool = new Pool(env);
@@ -27,20 +26,6 @@ const wss = new WebSocket.Server({ port: 8080 });
 wss.on('connection', (ws) => {
   console.log('Client connected');
 
-  ws.on('message', (message) => {
-    const data = JSON.parse(message);
-    console.log(data);
-    console.log(`Received: ${data.payload} 
-    from client ${data.clientId}`);
-    // Broadcast the message to all connected clients
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(`Client ${data.clientId} 
-        sent -> ${data.payload}`);
-      }
-    });
-  });
-
   ws.on('close', () => {
     console.log('Client disconnected');
   });
@@ -49,11 +34,8 @@ wss.on('connection', (ws) => {
 app.get('/', async (_req, res) => {
   let database = {};
   database['bases'] = (await pool.query('SELECT * FROM bases;')).rows;
-  // database['mines'] = (await pool.query('SELECT * FROM mines;')).rows;
   database['ships'] = (await pool.query('SELECT * FROM ships;')).rows;
-  database['board'] = (
-    await pool.query('SELECT * FROM board ORDER BY position_id ASC;')
-  ).rows;
+  database['board'] = (await pool.query('SELECT * FROM board ORDER BY position_id ASC;')).rows;
 
   res.json(database);
 });
@@ -194,9 +176,9 @@ const getRandomAttribute = () => {
 };
 
 app.post('/attack', (req, res) => {
-  const { attackerShipID, targetShipID } = req.body;
+  const { player, target } = req.body;
 
-  if (!attackerShipID || !targetShipID) {
+  if (!player || !target) {
     return res.send(400).status('Invalid request body');
   }
 
@@ -205,7 +187,7 @@ app.post('/attack', (req, res) => {
   pool
     .query(
       'SELECT health, damage, speed, range FROM ships WHERE ship_id = $1',
-      [targetShipID]
+      [target]
     )
     .then((result) => {
       if (result.rows.length === 0) {
@@ -222,12 +204,12 @@ app.post('/attack', (req, res) => {
 
       return pool.query(
         `UPDATE ships SET health = $1, ${randomAttribute} = $2 WHERE ship_id = $3`,
-        [newHealth, newAttributeValue, targetShipID]
+        [newHealth, newAttributeValue, target]
       );
     })
     .then(() => {
       console.log(
-        `Attacked ship ${targetShipID}: health and ${randomAttribute} decreased`
+        `Attacked ship ${target}: health and ${randomAttribute} decreased`
       );
       return pool.query('SELECT * FROM board ORDER BY position_id ASC;');
     })
