@@ -1,5 +1,5 @@
 \c postgres
-DROP DATABASE IF EXISTS flattles;
+DROP DATABASE IF EXISTS flattles WITH (FORCE);
 CREATE DATABASE flattles;
 \c flattles
 
