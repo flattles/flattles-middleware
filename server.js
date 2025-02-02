@@ -1,9 +1,9 @@
-let dotenv = require('dotenv').config({ path: './.env' });
+require('dotenv').config({ path: './.env' });
 let express = require('express');
 const cors = require('cors');
 let { Pool } = require('pg');
 let WebSocket = require('ws');
-let env = require('./env.json');
+const { powerups } = require('./env');
 
 let hostname = '0.0.0.0';
 let port = process.env.PORT || 3000;
@@ -20,7 +20,7 @@ pool.connect().then(() => {
   console.log('Connected to database');
 });
 
-const wss = new WebSocket.Server({ port: 8080 });
+const wss = new WebSocket.Server({ port: process.env.WS_PORT || 8080 });
 wss.on('connection', (ws) => {
   console.log('Client connected');
 
