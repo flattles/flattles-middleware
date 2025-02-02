@@ -3,6 +3,7 @@ let express = require('express');
 const cors = require('cors');
 let { Pool } = require('pg');
 let WebSocket = require('ws');
+const http = require('http');
 const { powerups } = require('./env');
 
 let hostname = '0.0.0.0';
@@ -20,13 +21,25 @@ pool.connect().then(() => {
   console.log('Connected to database');
 });
 
-const wss = new WebSocket.Server({ port: process.env.WS_PORT || 8080 });
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ noServer: true });
+
+server.on('upgrade', (request, socket, head) => {
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit('connection', ws, request);
+  });
+});
+
 wss.on('connection', (ws) => {
   console.log('Client connected');
 
   ws.on('close', () => {
     console.log('Client disconnected');
   });
+});
+
+server.listen(port, hostname, () => {
+  console.log(`http://${hostname}:${port}/`);
 });
 
 app.get('/', async (_req, res) => {
@@ -222,8 +235,4 @@ app.post('/attack', (req, res) => {
       console.log(error);
       return res.status(400).send(error.message);
     });
-});
-
-app.listen(port, hostname, () => {
-  console.log(`http://${hostname}:${port}`);
 });
