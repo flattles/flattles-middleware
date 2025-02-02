@@ -6,7 +6,7 @@ let WebSocket = require('ws');
 let env = require('./env.json');
 
 let hostname = '0.0.0.0';
-let port = 3000;
+let port = process.env.PORT || 3000;
 let app = express();
 
 app.use(express.json());
