@@ -1,8 +1,9 @@
+let dotenv = require('dotenv').config({ path: './.env' });
 let express = require('express');
+const cors = require('cors');
 let { Pool } = require('pg');
 let WebSocket = require('ws');
-const cors = require('cors');
-let env = require('../env.json');
+let env = require('./env.json');
 
 let hostname = '0.0.0.0';
 let port = 3000;
@@ -10,14 +11,11 @@ let app = express();
 
 app.use(express.json());
 app.use(express.static('public'));
-// app.use(
-//   cors({
-//     origin: 'http://localhost:5173', // Allow only this origin
-//   })
-// );
 app.use(cors());
 
-let pool = new Pool(env);
+let pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 pool.connect().then(() => {
   console.log('Connected to database');
 });
@@ -35,7 +33,9 @@ app.get('/', async (_req, res) => {
   let database = {};
   database['bases'] = (await pool.query('SELECT * FROM bases;')).rows;
   database['ships'] = (await pool.query('SELECT * FROM ships;')).rows;
-  database['board'] = (await pool.query('SELECT * FROM board ORDER BY position_id ASC;')).rows;
+  database['board'] = (
+    await pool.query('SELECT * FROM board ORDER BY position_id ASC;')
+  ).rows;
 
   res.json(database);
 });

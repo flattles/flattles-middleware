@@ -1,14 +1,15 @@
 {
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
     "express": "^4.21.1",
     "pg": "^8.13.0",
     "ws": "^8.18.0"
   },
   "type": "commonjs",
   "scripts": {
-    "start": "cd src && node server.js",
+    "start": "node server.js",
     "setup": "psql -U postgres -f setup.sql",
-    "dev": "psql -U postgres -f setup.sql && cd src && node --watch server.js"
+    "dev": "psql -U postgres -f setup.sql && node --watch server.js"
   }
 }

@@ -28,17 +28,21 @@ CREATE TABLE board (
   position_id SERIAL PRIMARY KEY,
   x_coord VARCHAR(1),
   y_coord INT,
-  entity_type entity_type,  -- Specifies if it’s a "mine", "ship", or "base"
+  entity_type entity_type,  -- Specifies if it’s a "ship" or "base"
   entity_id INT             -- The ID of the referenced entity
 );
 
 -- Insert all the unique ships for each player into the ships table
 INSERT INTO ships (name, health, speed, damage, range, player)
 VALUES
-  ('Light Ship', 3, 4, 1, 2, 1),
-  ('Heavy Ship', 6, 1, 4, 3, 2),
-  ('Glass Cannon', 1, 3, 6, 3, 3),
-  ('Light Ship', 1, 3, 6, 3, 4);
+  ('Light Ship', 3, 2, 2, 2, 1),
+  ('Heavy Ship', 5, 1, 3, 3, 1),
+  ('Heavy Ship', 5, 1, 3, 3, 2),
+  ('Glass Cannon', 2, 1, 5, 2, 2),
+  ('Light Ship', 3, 2, 2, 2, 3),
+  ('Glass Cannon', 2, 1, 5, 2, 3),
+  ('Light Ship', 3, 2, 2, 2, 4),
+  ('Light Ship', 3, 2, 2, 2, 4);
 
 -- Insert all the bases into the bases table
 INSERT INTO bases (health, player)
@@ -64,6 +68,10 @@ END $$;
 
 -- Update the board table to reflect the initial positions of the players
 UPDATE board SET entity_type = 'ship', entity_id = 1 WHERE x_coord = 'F' AND y_coord = 1;
-UPDATE board SET entity_type = 'ship', entity_id = 2 WHERE x_coord = 'E' AND y_coord = 10;
-UPDATE board SET entity_type = 'ship', entity_id = 3 WHERE x_coord = 'A' AND y_coord = 6;
-UPDATE board SET entity_type = 'ship', entity_id = 4 WHERE x_coord = 'J' AND y_coord = 5;
+UPDATE board SET entity_type = 'ship', entity_id = 2 WHERE x_coord = 'E' AND y_coord = 1;
+UPDATE board SET entity_type = 'ship', entity_id = 3 WHERE x_coord = 'E' AND y_coord = 10;
+UPDATE board SET entity_type = 'ship', entity_id = 4 WHERE x_coord = 'F' AND y_coord = 10;
+UPDATE board SET entity_type = 'ship', entity_id = 5 WHERE x_coord = 'A' AND y_coord = 5;
+UPDATE board SET entity_type = 'ship', entity_id = 6 WHERE x_coord = 'A' AND y_coord = 6;
+UPDATE board SET entity_type = 'ship', entity_id = 7 WHERE x_coord = 'J' AND y_coord = 5;
+UPDATE board SET entity_type = 'ship', entity_id = 8 WHERE x_coord = 'J' AND y_coord = 6;
