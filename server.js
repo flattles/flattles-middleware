@@ -183,10 +183,18 @@ app.post('/move', (req, res) => {
     });
 });
 
-const getRandomAttribute = () => {
-  const attributes = ['speed', 'range'];
-  return attributes[Math.floor(Math.random() * attributes.length)];
-};
+function broadcastAttack(player, updatedStats) {
+  const data = JSON.stringify({
+    type: 'UPDATE_STATS',
+    player: player,
+    stats: updatedStats,
+  });
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(data);
+    }
+  });
+}
 
 app.post('/attack', (req, res) => {
   const { player, target } = req.body;
@@ -194,8 +202,6 @@ app.post('/attack', (req, res) => {
   if (!player || !target) {
     return res.send(400).status('Invalid request body');
   }
-
-  const randomAttribute = getRandomAttribute();
 
   pool
     .query(
@@ -207,28 +213,29 @@ app.post('/attack', (req, res) => {
         throw new Error('Target ship not found');
       }
 
-      const newHealth = result.rows[0].health - result.rows[0].damage;
-      const newAttributeValue =
-        result.rows[0][randomAttribute] - result.rows[0].damage;
-
-      if (newHealth <= 0) {
+      if (result.rows[0].health === 0) {
         throw new Error('Target ship is already destroyed');
       }
 
+      let newHealth = result.rows[0].health - result.rows[0].damage;
+
+      if (newHealth < 0) {
+        newHealth = 0;
+      }
+
       return pool.query(
-        `UPDATE ships SET health = $1, ${randomAttribute} = $2 WHERE ship_id = $3`,
-        [newHealth, newAttributeValue, target]
+        `UPDATE ships SET health = $1 WHERE ship_id = $2`,
+        [newHealth, target]
       );
     })
     .then(() => {
       console.log(
-        `Attacked ship ${target}: health and ${randomAttribute} decreased`
+        `Attacked ship ${target}`
       );
-      return pool.query('SELECT * FROM board ORDER BY position_id ASC;');
+      return pool.query('SELECT * FROM ships WHERE ship_id = $1;', [target])
     })
     .then((result) => {
-      const updatedBoardState = result.rows;
-      broadcastBoardState(updatedBoardState);
+      broadcastAttack(target, result.rows[0]);
       res.send();
     })
     .catch((error) => {
