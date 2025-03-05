@@ -63,7 +63,12 @@ BEGIN
 END $$;
 
 -- Update the board table to reflect the initial positions of the players
-UPDATE board SET entity_type = 'ship', entity_id = 1 WHERE x_coord = 'F' AND y_coord = 1;
-UPDATE board SET entity_type = 'ship', entity_id = 2 WHERE x_coord = 'E' AND y_coord = 10;
-UPDATE board SET entity_type = 'ship', entity_id = 3 WHERE x_coord = 'A' AND y_coord = 5;
-UPDATE board SET entity_type = 'ship', entity_id = 4 WHERE x_coord = 'J' AND y_coord = 6;
+UPDATE board SET entity_type = 'ship', entity_id = 1 WHERE x_coord = 'B' AND y_coord = 2;
+UPDATE board SET entity_type = 'ship', entity_id = 2 WHERE x_coord = 'B' AND y_coord = 10;
+UPDATE board SET entity_type = 'ship', entity_id = 3 WHERE x_coord = 'I' AND y_coord = 1;
+UPDATE board SET entity_type = 'ship', entity_id = 4 WHERE x_coord = 'I' AND y_coord = 9;
+
+UPDATE board SET entity_type = 'base', entity_id = 1 WHERE x_coord = 'A' AND y_coord = 1;
+UPDATE board SET entity_type = 'base', entity_id = 2 WHERE x_coord = 'A' AND y_coord = 10;
+UPDATE board SET entity_type = 'base', entity_id = 3 WHERE x_coord = 'J' AND y_coord = 1;
+UPDATE board SET entity_type = 'base', entity_id = 4 WHERE x_coord = 'J' AND y_coord = 10;

@@ -9,7 +9,7 @@
   "type": "commonjs",
   "scripts": {
     "start": "node server.js",
-    "setup": "psql -U postgres -f setup.sql",
-    "dev": "psql -U postgres -f setup.sql && node --watch server.js"
+    "setup": "psql -U postgres -f ./sql/setup.sql",
+    "dev": "psql -U postgres -f ./sql/setup.sql && node --watch server.js"
   }
 }
